@@ -1,0 +1,22 @@
+{
+  "run_id": "RUN20260901A",
+  "sample_id": "test01",
+  "condition": "control",
+  "read_count": 65308,
+  "total_samples": 2457586063,
+  "read_length": {
+    "p10": 4128,
+    "median": 33152,
+    "p90": 84142
+  },
+  "end_reason": {
+    "signal_positive": 63073,
+    "unblock_mux_change": 2207,
+    "signal_negative": 28
+  },
+  "channels": {
+    "n_active": 500,
+    "reads_min": 1,
+    "reads_max": 173
+  }
+}
