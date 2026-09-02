@@ -1,0 +1,10 @@
+work/
+.nextflow/
+.nextflow.log*
+results/
+data/*.pod5
+data/*.fast5
+data/*.bam
+__pycache__/
+*.pyc
+.venv/
