@@ -28,9 +28,23 @@ Test data: ONT open dataset, 65,308 reads across 500 active channels.
   metadata and is not in the per-read table, so it needs capturing in the schema
   for anything downstream to convert without guessing.
 
+- **Accuracy was the wrong metric.** 96.6% of reads end normally, so a model
+  predicting "fine" for everything scores 96.6%. The first version scored 97.4%
+  and looked good. Adding `class_weight="balanced"` dropped accuracy to 86% while
+  ROC-AUC held at 0.89 — the model didn't get worse, the operating point moved.
+  PR-AUC on the rare class is 0.44 against a 0.034 random baseline, ~13x lift.
+  At 0.16 precision / 0.71 recall this is a screening filter, not an auto-reject
+  rule; the registry logs the baselines alongside the metrics so the comparison
+  is visible rather than implied.
+
 ## Status
-Phase 0 — spine only. No basecalling yet.
-Next: DuckDB over the Parquet, Streamlit dashboard, then Dorado.
+Runs end to end on public ONT open data: samplesheet → per-read signal metadata →
+Parquet and run-level QC → DuckDB → dashboard. Local executor.
+
+Next: model versioning, so every classification traces to the model that produced it.
+Then Dorado basecalling and alignment.
+
+Not a production system — no instrument integration, alerting, or retention policy.
 
 ## Dashboard
 

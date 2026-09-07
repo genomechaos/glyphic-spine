@@ -8,3 +8,7 @@ data/*.bam
 __pycache__/
 *.pyc
 .venv/
+
+# mlflow
+mlruns/
+mlruns.db
