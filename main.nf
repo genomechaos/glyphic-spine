@@ -19,25 +19,6 @@ process POD5_VIEW {
     """
 }
 
-workflow {
-    Channel
-        .fromPath(params.samplesheet)
-        .splitCsv(header: true)
-        .map { row ->
-            def meta = [
-                run_id   : row.run_id,
-                sample_id: row.sample_id,
-                condition: row.condition,
-                flowcell : row.flowcell
-            ]
-            tuple(meta, file(row.pod5_path))
-        }
-        .set { ch_input }
-
-    POD5_VIEW(ch_input)
-    QC_SUMMARY(POD5_VIEW.out.reads)
-}
-
 process QC_SUMMARY {
     tag "${meta.run_id}"
     publishDir "${params.outdir}/qc", mode: 'copy'
@@ -59,4 +40,43 @@ process QC_SUMMARY {
         --json-out ${meta.run_id}.qc.json \\
         --parquet-out ${meta.run_id}.reads.parquet
     """
+}
+
+process CLASSIFY {
+    tag "${meta.run_id}"
+    publishDir "${params.outdir}/classified", mode: 'copy'
+
+    input:
+    tuple val(meta), path(tsv)
+
+    output:
+    path "*.classified.parquet"
+
+    script:
+    """
+    classify.py \\
+        --reads ${tsv} \\
+        --run-id ${meta.run_id} \\
+        --out ${meta.run_id}.classified.parquet
+    """
+}
+
+workflow {
+    Channel
+        .fromPath(params.samplesheet)
+        .splitCsv(header: true)
+        .map { row ->
+            def meta = [
+                run_id   : row.run_id,
+                sample_id: row.sample_id,
+                condition: row.condition,
+                flowcell : row.flowcell
+            ]
+            tuple(meta, file(row.pod5_path))
+        }
+        .set { ch_input }
+
+    POD5_VIEW(ch_input)
+    QC_SUMMARY(POD5_VIEW.out.reads)
+    CLASSIFY(POD5_VIEW.out.reads)
 }

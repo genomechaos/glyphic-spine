@@ -56,3 +56,40 @@ if "channel" in reads.columns:
 if "end_reason" in reads.columns:
     st.subheader("End reason")
     st.bar_chart(reads["end_reason"].value_counts())
+
+# ---- classification, grouped by the model that produced it ----
+st.divider()
+st.header("Classification")
+
+try:
+    clf = con.execute(
+        f"SELECT * FROM classified WHERE run_id IN ({placeholders})", selected
+    ).fetchdf()
+except Exception:
+    clf = pd.DataFrame()
+
+if clf.empty:
+    st.info("No classification output yet — run the pipeline, then `python3 bin/build_db.py`.")
+else:
+    d1, d2, d3 = st.columns(3)
+    d1.metric("Classified reads", f"{len(clf):,}")
+    d2.metric("Flagged", f"{int((clf['pred_normal'] == 0).sum()):,}")
+    d3.metric("Model versions", ", ".join(str(v) for v in sorted(clf["model_version"].unique())))
+
+    st.subheader("By model version")
+    st.dataframe(
+        clf.groupby(["model_version", "run_id"]).agg(
+            reads=("read_id", "size"),
+            flagged=("pred_normal", lambda s: int((s == 0).sum())),
+            mean_p_normal=("p_normal", "mean"),
+            classified_at=("classified_at", "max"),
+        ).reset_index(),
+        use_container_width=True,
+    )
+
+    st.subheader("Score distribution")
+    binned = pd.cut(clf["p_normal"], bins=40).value_counts().sort_index()
+    st.bar_chart(pd.DataFrame(
+        {"reads": binned.values},
+        index=[round(float(i.left), 3) for i in binned.index],
+    ))
