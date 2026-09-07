@@ -1,44 +1,18 @@
 #!/usr/bin/env python3
-"""Create DuckDB views over the pipeline's Parquet and JSON outputs.
+"""Report on the view layer. Nothing is materialised and nothing is written.
 
-No data is copied. The views point at the files the pipeline wrote, so the
-database can never drift out of sync with the pipeline output.
+Kept as a CLI sanity check: if this prints sensible row counts, the dashboard
+will see the same numbers, because both build the views from sql/views.sql.
 """
-import os
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import duckdb
+from views import apply_views
 
-DB = "results/glyphic.duckdb"
-os.makedirs("results", exist_ok=True)
-con = duckdb.connect(DB)
+con = apply_views(duckdb.connect())
 
-con.execute("""
-    CREATE OR REPLACE VIEW reads AS
-    SELECT * FROM read_parquet('results/qc/*.reads.parquet')
-""")
-
-con.execute("""
-    CREATE OR REPLACE VIEW runs AS
-    SELECT * FROM read_json_auto('results/qc/*.qc.json')
-""")
-
-con.execute("""
-    CREATE OR REPLACE VIEW classified AS
-    SELECT * FROM read_parquet('results/classified/*.classified.parquet')
-""")
-
-for view in ("reads", "runs", "classified"):
+for view in ("reads", "runs", "classified", "basecalls",
+             "basecall_by_read", "reads_full"):
     n = con.execute(f"SELECT count(*) FROM {view}").fetchone()[0]
-    print(f"{view:12s} {n:>9,} rows")
-
-print("\nmodel versions present:")
-rows = con.execute("""
-    SELECT model_name, model_version, count(*) AS n
-    FROM classified
-    GROUP BY 1, 2
-    ORDER BY 2
-""").fetchall()
-for name, version, n in rows:
-    print(f"  {name} v{version}: {n:,} rows")
-
-con.close()
-print(f"\nwrote {DB}")
+    print(f"{view:18s} {n:>9,} rows")
