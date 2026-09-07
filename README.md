@@ -31,3 +31,12 @@ Test data: ONT open dataset, 65,308 reads across 500 active channels.
 ## Status
 Phase 0 — spine only. No basecalling yet.
 Next: DuckDB over the Parquet, Streamlit dashboard, then Dorado.
+
+## Dashboard
+
+![QC dashboard](docs/dashboard.png)
+
+Streamlit over DuckDB, which queries the pipeline's Parquet output in place —
+no ETL, so the dashboard can't drift out of sync with what the pipeline produced.
+
+Run: `streamlit run app.py`
